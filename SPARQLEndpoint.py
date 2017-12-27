@@ -4,7 +4,7 @@
 from SPARQLWrapper import *
 from SPARQLWrapper.Wrapper import QueryResult, QueryBadFormed, EndPointNotFound, EndPointInternalError
 # from time import *
-from urllib.error import HTTPError
+from urllib2 import HTTPError
 import time as t
 import sys, json
 import csv
@@ -12,7 +12,7 @@ import imp
 # imp.reload(sys)
 # sys.setdefaultencoding('utf-8')
 
-def SPARQLQuery(queryString, url = "http://dbpedia.org/sparql", returnFullJSON = False, hasRequested = 0):
+def SPARQLQuery(queryString, url = "http://localhost:7575/sparql", returnFullJSON = False, hasRequested = 0):
 	hasRequested += 1 
 	try:
 		sparql = SPARQLWrapper(url)
