@@ -26,9 +26,12 @@ def countNumEntitiesOfType(aClass):
 
 def precalculatePriorProb(filename):
 	f = open(filename, 'w') 
+	priorProb = dict()
 	for c in classDict.keys():
 		f.write(c + '\t' + str(countNumEntitiesOfType(c)/numAllEntities) + '\n')
+		priorProb[c] = float(countNumEntitiesOfType(c)/numAllEntities)
 	f.close()
+	return priorProb
 
 def loadPriorProb(filename = 'PriorProbability.txt'):
 	f = open(filename, 'r')
@@ -101,20 +104,44 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 
 	return ansVector
 
-def precalculateConditionalProb(filename, propertyList):
+def precalculateConditionalProb(filename = 'ConditionalProbability.txt', propertyList):
 	f = open(filename, 'w') 
+	conditionalProb = dict()
 	for prop in propertyList:
 		condProb = findConditionalProbOfProperty(prop, entitySubject = True)
+		conditionalProb[prop] = condProb
 		f.write(prop + ',' + ','.join(map(str, condProb)) +'\n')
 	for prop in propertyList:
 		condProb = findConditionalProbOfProperty(prop, entitySubject = False)
+		conditionalProb[prop+'-1'] = condProb
 		f.write(prop+'-1' + ',' + ','.join(map(str, condProb)) +'\n')
 	f.close()
+	return conditionalProb
+# ============================================
+# Weight-related
+def precalculateWeight(filename = 'Weight.txt', priorProb, conditionalProb):
+	f = open(filename, 'w')
+	weight = dict()
+	prior = np.array(priorProb.values())
+	for prop in conditionalProb.keys():
+		weight[prop] = np.sum((prior - conditionalProb[prop])**2)
+		f.write(prop+'\t'+str(weight[prop]+'\n'))
+	f.close()
+	return weight
+
+def loadWeight(filename = 'Weight.txt'):
+	f = open(filename, 'r')
+	weight = dict()
+	for line in f.readlines():
+		aTuple = line.strip().split('\t')
+		weight[aTuple[0]] = float(aTuple[1])
+	return weight
 # ============================================
 # One-time run 
 propertyList = getAllProperties()
-precalculatePriorProb('PriorProbability.txt')
-precalculateConditionalProb('ConditionalProbability.txt', propertyList)
+priorProb = precalculatePriorProb('PriorProbability.txt')
+conditionalProb = precalculateConditionalProb('ConditionalProbability.txt', propertyList)
+weight = precalculateWeight('Weight.txt', priorProb, conditionalProb)
 # ============================================
 
 # priorProb = loadPriorProb()
