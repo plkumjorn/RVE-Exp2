@@ -107,7 +107,7 @@ class OWLDatatype:
 
 		
 
-tree = ET.parse('dbpedia_2016-04.owl')
+tree = ET.parse('dbpedia_2016-10.owl')
 root = tree.getroot()
 print('Initialized dbpedia ontology 2016-04') 
 
