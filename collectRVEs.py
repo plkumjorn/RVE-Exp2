@@ -35,4 +35,13 @@ def getPropertyRVEStats():
 			
 			writer.writerow([prop[0], prop[1], numAllStatements, numRVEStatements])
 
-getPropertyRVEStats()
+def randomRVEIDs(filename, numRVEs):
+	selectedRVEs = list()
+	allRVEs = list()
+	input_file = csv.DictReader(open(filename))
+	for row in input_file:
+		for i in range(row['numRVEStatements']):
+			allRVEs.append((row['Property'], i))
+	print(len(allRVEs))
+	
+# getPropertyRVEStats()
