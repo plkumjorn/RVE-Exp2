@@ -4,7 +4,7 @@
 from SPARQLWrapper import *
 from SPARQLWrapper.Wrapper import QueryResult, QueryBadFormed, EndPointNotFound, EndPointInternalError
 # from time import *
-from urllib.error import HTTPError
+from urllib2 import HTTPError
 import time as t
 import sys, json
 import csv
