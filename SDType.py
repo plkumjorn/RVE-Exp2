@@ -125,7 +125,7 @@ def precalculateWeight(filename, priorProb, conditionalProb):
 	prior = np.array(priorProb.values())
 	for prop in conditionalProb.keys():
 		weight[prop] = np.sum((prior - conditionalProb[prop])**2)
-		f.write(prop+'\t'+str(weight[prop]+'\n'))
+		f.write(prop+'\t'+str(weight[prop])+'\n')
 	f.close()
 	return weight
 
