@@ -3,6 +3,7 @@
 
 from xmlOWL import *
 from SPARQLEndpoint import *
+import random
 
 def getPropertyRVEStats():
 	propertyToCheck = list()
@@ -40,8 +41,11 @@ def randomRVEIDs(filename, numRVEs):
 	allRVEs = list()
 	input_file = csv.DictReader(open(filename))
 	for row in input_file:
-		for i in range(row['numRVEStatements']):
+		for i in range(int(float(row['numRVEStatements']))):
 			allRVEs.append((row['Property'], i))
-	print(len(allRVEs))
+	# print(len(allRVEs))
+	selectedRVEs = random.sample(allRVEs, numRVEs)
+	return selectedRVEs
 	
 # getPropertyRVEStats()
+print(randomRVEIDs('PropertyRVEStats-Server.csv', 10))
