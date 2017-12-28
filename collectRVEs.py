@@ -61,12 +61,12 @@ def getRVEbyID(property, offset):
 def getRVEDataset(numRVEs):
 	selected = randomRVEIDs('PropertyRVEStats-Server.csv', numRVEs)
 	RVEs = list()
-	with open('RVEsSampled'+ str(numRVEs) + '-' + time.strftime("%Y%m%d%H%M%S") +'.csv', 'wb') as csvfile:
+	with open('RVEsSampledServer'+ str(numRVEs) + '-' + time.strftime("%Y%m%d%H%M%S") +'.csv', 'wb') as csvfile:
 		writer = csv.writer(csvfile, delimiter=',')
 		writer.writerow(['s', 'p', 'o', 'r', 'id'])
 		for i in selected:
-			rve = getRVEbyID(i[0], i[1])
-			writer.writerow([rve['s'], rve['p'], rve['o'], rve['r'], rve['id']])
+			rve = dict(getRVEbyID(i[0], i[1]))
+			writer.writerow([rve['s'].encode('utf8'), rve['p'].encode('utf8'), rve['o'].encode('utf8'), rve['r'].encode('utf8'), rve['id']])
 			RVEs.append(rve)
 	return RVEs
 

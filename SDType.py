@@ -59,10 +59,10 @@ def getAllProperties():
 	return propertyList
 
 def loadProperties(filename):
-	f = open(filename, 'r', encoding='utf-8')
+	f = open(filename, 'r')
 	propertyList = list()
 	for row in f.readlines():
-		propertyList.append(row.strip())
+		propertyList.append(row.strip().decode('utf8'))
 	f.close()
 	return propertyList
 
@@ -194,6 +194,9 @@ def probabilityOfType(type, entity, propertyList, priorProb, conditionalProb, we
 		return None
 	return classVector[classList.index(type)]
 
+def topKTypes(entity, k):
+	return returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight)
+
 def returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight):
 	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight)
 	classIndexSorted = np.argsort(classVector)[::-1]
@@ -234,6 +237,7 @@ def getAllRelatedPropOf(entity, propertyList):
 	for row in nrows:
 		if row['p']['value'] in propertyList:
 			allRelatedProp.append(row['p']['value']+'-1')
+	print(allRelatedProp)
 	return allRelatedProp
 
 
@@ -250,7 +254,8 @@ priorProb = loadPriorProb('PriorProbability-Server.txt')
 conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
 weight = loadWeight(propertyList, 'Weight-Server.txt')
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
-print(probOfType('http://dbpedia.org/ontology/SportsTeam', 'http://dbpedia.org/resource/England_B_national_football_team'))
+# print(probOfType('http://dbpedia.org/ontology/BasketballLeague', 'http://dbpedia.org/resource/England_B_national_football_team'))
+# print(topKTypes('http://dbpedia.org/resource/England_B_national_football_team',10))
 # priorProb = loadPriorProb()
 
 
