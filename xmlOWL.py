@@ -109,7 +109,7 @@ class OWLDatatype:
 
 tree = ET.parse('dbpedia_2016-10.owl')
 root = tree.getroot()
-print('Initialized dbpedia ontology 2016-04') 
+print('Initialized dbpedia ontology 2016-10') 
 
 def getClassNameList():
 	allClassNames = [cl.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about'] for cl in root.iter('{http://www.w3.org/2002/07/owl#}Class')]

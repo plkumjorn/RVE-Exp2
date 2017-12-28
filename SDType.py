@@ -59,10 +59,10 @@ def getAllProperties():
 	return propertyList
 
 def loadProperties(filename):
-	f = open(filename, 'r')
+	f = io.open(filename, 'r', encoding="utf-8")
 	propertyList = list()
 	for row in f.readlines():
-		propertyList.append(row.strip().decode('utf8'))
+		propertyList.append(row.strip())
 	f.close()
 	return propertyList
 
@@ -90,7 +90,7 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 
 	if entitySubject:
 		query = """
-		SELECT ?type COUNT(?s) AS ?cnt WHERE{
+		SELECT ?type COUNT(DISTINCT ?s) AS ?cnt WHERE{
 		?s <%s> [].
 		?s a ?type.
 		?type a owl:Class.
@@ -98,7 +98,7 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 		""" % (p)
 	else:
 		query = """
-		SELECT ?type COUNT(?s) AS ?cnt WHERE{
+		SELECT ?type COUNT(DISTINCT ?s) AS ?cnt WHERE{
 		[] <%s> ?s.
 		?s a ?type.
 		?type a owl:Class.
@@ -114,17 +114,30 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 	return ansVector
 
 def precalculateConditionalProb(filename, propertyList):
-	f = open(filename, 'w') 
-	conditionalProb = dict()
-	for prop in propertyList:
-		condProb = findConditionalProbOfProperty(prop, entitySubject = True)
-		conditionalProb[prop] = condProb
-		f.write('"' + prop.encode('utf8') + '",' + ','.join(map(str, condProb)) +'\n')
-	for prop in propertyList:
-		condProb = findConditionalProbOfProperty(prop, entitySubject = False)
-		conditionalProb[prop+'-1'] = condProb
-		f.write('"' + prop.encode('utf8')+'-1"' + ',' + ','.join(map(str, condProb)) +'\n')
-	f.close()
+	# f = open(filename, 'w') 
+	# conditionalProb = dict()
+	# for prop in propertyList:
+	# 	condProb = findConditionalProbOfProperty(prop, entitySubject = True)
+	# 	conditionalProb[prop] = condProb
+	# 	f.write('"' + prop.encode('utf8') + '",' + ','.join(map(str, condProb)) +'\n')
+	# for prop in propertyList:
+	# 	condProb = findConditionalProbOfProperty(prop, entitySubject = False)
+	# 	conditionalProb[prop+'-1'] = condProb
+	# 	f.write('"' + prop.encode('utf8')+'-1"' + ',' + ','.join(map(str, condProb)) +'\n')
+	# f.close()
+	# return conditionalProb
+
+	with open(filename, 'w', newline='') as csvfile:
+		writer = csv.writer(csvfile, delimiter=',')
+		conditionalProb = dict()
+		for prop in propertyList:
+			condProb = findConditionalProbOfProperty(prop, entitySubject = True)
+			conditionalProb[prop] = condProb
+			writer.writerow(list(condProb))
+		for prop in propertyList:
+			condProb = findConditionalProbOfProperty(prop, entitySubject = False)
+			conditionalProb[prop+'-1'] = condProb
+			writer.writerow(list(condProb))
 	return conditionalProb
 
 def transformConditionalProbFile(filename = 'ConditionalProbability-MalformedCSV.txt'):
@@ -202,7 +215,7 @@ def returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight)
 	classIndexSorted = np.argsort(classVector)[::-1]
 	classList = list(priorProb.keys())
 	classListSorted = [classList[i] for i in classIndexSorted]
-	return classListSorted[:k]
+	return [(classListSorted[i], classVector[classIndexSorted[i]]) for i in range(k)]
 	# classList = list(priorProb.keys())
 
 def calculateClassVector(entity, propertyList, conditionalProb, weight):
@@ -215,6 +228,7 @@ def calculateClassVector(entity, propertyList, conditionalProb, weight):
 	denominator = np.sum(propExistenceVector*weightVector)
 	nominator = np.dot(conditionalProbMatrix.T , propExistenceVector*weightVector)
 	classVector = nominator / denominator
+	print(np.sum(conditionalProbMatrix > 1))
 	return classVector
 
 def getAllRelatedPropOf(entity, propertyList):
@@ -237,25 +251,26 @@ def getAllRelatedPropOf(entity, propertyList):
 	for row in nrows:
 		if row['p']['value'] in propertyList:
 			allRelatedProp.append(row['p']['value']+'-1')
-	print(allRelatedProp)
+	# print(allRelatedProp)
 	return allRelatedProp
 
 
 # ============================================
 # One-time run 
 # propertyList = getAllProperties()
+propertyList = loadProperties('PropertyList-Server.txt')
 # priorProb = precalculatePriorProb('PriorProbability.txt')
-# conditionalProb = precalculateConditionalProb('ConditionalProbability.txt', propertyList)
+conditionalProb = precalculateConditionalProb('ConditionalProbability-ServerBugFix.txt', propertyList)
 # weight = precalculateWeight('Weight-Server.txt', priorProb, conditionalProb)
 # ============================================
 # Load pre-calculated data to run
-propertyList = loadProperties('PropertyList-Server.txt')
-priorProb = loadPriorProb('PriorProbability-Server.txt')
-conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
-weight = loadWeight(propertyList, 'Weight-Server.txt')
+# propertyList = loadProperties('PropertyList-Server.txt')
+# priorProb = loadPriorProb('PriorProbability-Server.txt')
+# conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
+# weight = loadWeight(propertyList, 'Weight-Server.txt')
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
 # print(probOfType('http://dbpedia.org/ontology/BasketballLeague', 'http://dbpedia.org/resource/England_B_national_football_team'))
-# print(topKTypes('http://dbpedia.org/resource/England_B_national_football_team',10))
+# print(topKTypes('http://dbpedia.org/resource/Variety_show',10))
 # priorProb = loadPriorProb()
 
 
