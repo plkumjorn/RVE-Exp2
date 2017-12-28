@@ -10,7 +10,7 @@ def getPropertyRVEStats():
 		if op.range is not None and op.range in classDict:
 			propertyToCheck.append((uri, op.range))
 
-	with open('PropertyRVEStats.csv', 'w', newline='') as csvfile:
+	with open('PropertyRVEStats.csv', 'wb') as csvfile:
 		writer = csv.writer(csvfile, delimiter=',')
 		writer.writerow(['Property', 'Range', 'numAllStatements', 'numRVEStatements'])
 		for prop in propertyToCheck:
