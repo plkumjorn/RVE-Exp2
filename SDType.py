@@ -250,7 +250,7 @@ priorProb = loadPriorProb('PriorProbability-Server.txt')
 conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
 weight = loadWeight(propertyList, 'Weight-Server.txt')
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
-print(probOfType('http://dbpedia.org/ontology/Organisation', 'http://dbpedia.org/resource/Adolf_Hitler'))
+print(probOfType('http://dbpedia.org/ontology/SportsTeam', 'http://dbpedia.org/resource/England_B_national_football_team'))
 # priorProb = loadPriorProb()
 
 
