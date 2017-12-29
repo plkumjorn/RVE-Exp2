@@ -3,7 +3,7 @@
 
 # ---------------------------------------------------------------------------------------------------
 # Basic libraries
-import sys, json, csv, re, string, nltk, math, urllib, io
+import sys, json, csv, re, string, nltk, math, urllib, io, unicodecsv
 import numpy as np
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.porter import *
@@ -30,7 +30,7 @@ tau = 0.9
 # ---------------------------------------------------------------------------------------------------
 def loadTestCases(filename):
 	testcases = list()
-	input_file = csv.DictReader(io.open(filename, encoding="utf-8"))
+	input_file = unicodecsv.DictReader(io.open(filename, encoding="utf-8"))
 	for row in input_file:
 		testcases.append({'s': row['s'], 'p': row['p'], 'o': row['o'], 'r':row['r']})
 	return testcases
@@ -575,7 +575,7 @@ def doIndexing(docDict):
 testcases = loadTestCases('RVEsSampledServer300-20171229033026.csv')
 for rve in testcases[5:6]:
 	print(rve)
-	print(processATestCase(rve, typeThreshold = 0.5, method = 'keyword'))
+	print(processATestCase(rve, typeThreshold = 0.5, method = 'graph'))
 
 
 		

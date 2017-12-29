@@ -188,7 +188,7 @@ def calculateClassVector(entity, ofType = None):
 	else:
 		nominator = np.dot(conditionalProbMatrix.T[ofType] , propExistenceVector*weightVector)
 	classVector = nominator / denominator
-	return classVecto
+	return classVector
 
 def probOfType(c, entity):
 	classIdx = getIndexOfClass(c)
@@ -204,11 +204,14 @@ def topKTypes(entity, k):
 
 # ============================================
 # One-time run 
-priorVector = precalculatePriorProb('PriorVector-Server.csv')
-conditionalProbMatrix = precalculateConditionalProb('ConditionalProbMatrix-Server.csv')
-weightVector = precalculateWeight('WeightVector-Server.csv')
-print(probOfType('http://dbpedia.org/ontology/Country', 'http://dbpedia.org/resource/Australia'))
-print(topKTypes('http://dbpedia.org/resource/Australia',10))
-print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
-print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
+# priorVector = precalculatePriorProb('PriorVector-Server.csv')
+# conditionalProbMatrix = precalculateConditionalProb('ConditionalProbMatrix-Server.csv')
+# weightVector = precalculateWeight('WeightVector-Server.csv')
+priorVector = loadPriorVector('PriorVector-Server.csv')
+conditionalProbMatrix = loadConditionalProbMatrix('ConditionalProbMatrix-Server.csv')
+weightVector = loadWeight('WeightVector-Server.csv')
+# print(probOfType('http://dbpedia.org/ontology/Country', 'http://dbpedia.org/resource/Australia'))
+# print(topKTypes('http://dbpedia.org/resource/Australia',10))
+# print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
+# print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
 
