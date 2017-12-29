@@ -127,7 +127,7 @@ def precalculateConditionalProb(filename, propertyList):
 	# f.close()
 	# return conditionalProb
 
-	with open(filename, 'w', newline='') as csvfile:
+	with io.open(filename, 'wb') as csvfile:
 		writer = csv.writer(csvfile, delimiter=',')
 		conditionalProb = dict()
 		for prop in propertyList:
