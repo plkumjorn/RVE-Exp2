@@ -172,14 +172,17 @@ def loadConditionalProb(propertyList, filename):
 	return conditionalProb
 # ============================================
 # Weight-related
-def precalculateWeight(filename, priorProb, conditionalProb):
+def precalculateWeight(filename, propertyList, priorProb, conditionalProb):
 	f = open(filename, 'w')
 	weight = dict()
 	prior = np.array(list(priorProb.values()))
-	for prop in conditionalProb.keys():
+	priorVector = np.zeros(len(classDict))
+	for key in priorProb.keys():
+		priorVector[indexOfClass(key)] = priorProb[key]
+	for prop in propertyList:
 		# print(prior)
 		# print(conditionalProb[prop])
-		weight[prop] = np.sum((prior - conditionalProb[prop])**2)
+		weight[prop] = np.sum((priorVector - conditionalProb[prop])**2)
 		f.write(str(weight[prop])+'\n')
 	f.close()
 	return weight
@@ -201,10 +204,10 @@ def probOfType(type, entity):
 
 
 def probabilityOfType(type, entity, propertyList, priorProb, conditionalProb, weight):
-	classList = list(priorProb.keys())
-	if type not in classList:
+	idxOfType = indexOfClass(type)
+	if idxOfType == None:
 		return None
-	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = classList.index(type))
+	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = idxOfType)
 	return classVector
 
 
@@ -214,13 +217,14 @@ def topKTypes(entity, k):
 def returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight):
 	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight)
 	classIndexSorted = np.argsort(classVector)[::-1]
-	classList = list(priorProb.keys())
+	classList = list(classDict.keys())
 	classListSorted = [classList[i] for i in classIndexSorted]
 	return [(classListSorted[i], classVector[classIndexSorted[i]]) for i in range(k)]
 	# classList = list(priorProb.keys())
 
 def calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = None):
 	allRelatedProp = getAllRelatedPropOf(entity, propertyList)
+	# print(allRelatedProp)
 	weightVector = np.array(list(weight.values()))
 	conditionalProbMatrix = np.array([conditionalProb[key] for key in conditionalProb.keys()])
 	propExistenceVector = np.zeros(len(propertyList))
@@ -262,18 +266,23 @@ def getAllRelatedPropOf(entity, propertyList):
 # ============================================
 # One-time run 
 # propertyList = getAllProperties()
-# priorProb = precalculatePriorProb('PriorProbability.txt')
-# conditionalProb = precalculateConditionalProb('ConditionalProbability-ServerBugFix.txt', propertyList)
-# weight = precalculateWeight('Weight-ServerBugFix.txt', priorProb, conditionalProb)
+# priorProb = precalculatePriorProb('PriorProbability-Server2912.txt')
+# conditionalProb = precalculateConditionalProb('ConditionalProbability-Server2912.txt', propertyList)
+# weight = precalculateWeight('Weight-Server2912.txt', priorProb, conditionalProb)
 # ============================================
 # Load pre-calculated data to run
 propertyList = loadProperties('PropertyList-Server.txt')
 priorProb = loadPriorProb('PriorProbability-Server.txt')
-conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-ServerBugFix.txt')
-weight = loadWeight(propertyList, 'Weight-ServerBugFix.txt')
+# print(list(priorProb.keys())[0:100] == list(classDict.keys())[0:100])
+# print(len(priorProb.keys()), len(classDict.keys()))
+# sys.exit(0)
+conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
+weight = loadWeight(propertyList, 'Weight-Server.txt')
+# weight = precalculateWeight('Weight-Server2912.txt', propertyList, priorProb, conditionalProb)
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
-# print(probOfType('http://dbpedia.org/ontology/BasketballLeague', 'http://dbpedia.org/resource/England_B_national_football_team'))
-# print(topKTypes('http://dbpedia.org/resource/England_B_national_football_team',10))
+print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
+# print('Hey')
+print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
 # priorProb = loadPriorProb()
 
 
