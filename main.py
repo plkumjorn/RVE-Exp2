@@ -99,48 +99,11 @@ class ClueText:
 
 	def calculateKeywordsWeight(self, candidateObjects):
 		for kw in self.keywords:
-			numOccur = len([c for c in candidateObjects.values() if kw in c.doc])
-			self.keywordsWeight[kw] = 1 + math.log((float(len(candidateObjects))+1) / (numOccur+1))
-
-	def calculateKeywordsWeight2(self, oDoc):
-		# print weightKeyword
-		for kw in self.keywords:
-			if kw in oDoc:
-				self.keywordsWeight[kw] = 1.0
-			else:
-				self.keywordsWeight[kw] = weightKeyword
-
-	def calculateKeywordsWeight3(self, oDoc): # Check named-entity words
-		# print weightKeyword
-		for kw in self.keywords:
-			if kw in oDoc:
-				if kw in indexing: 
-					self.keywordsWeight[kw] = math.log(len(correctTypeObjectsDict)*1.0/len(indexing[kw]))
-				else:
-					self.keywordsWeight[kw] = 0
-			else:
-				self.keywordsWeight[kw] = weightKeyword
-
-	def calculateKeywordsWeight4(self, oDoc): # Check capital
-		# print weightKeyword
-		for kw in self.keywords:
 			if kw in oDoc and self.isCapitalKeyword[kw]:
 				self.keywordsWeight[kw] = 1.0
 			else:
 				self.keywordsWeight[kw] = weightKeyword
 
-	def calculateKeywordsWeight5(self, oDoc): # Check capital + IDF
-		# print weightKeyword
-		passCriteria = []
-		for kw in self.keywords:
-			if kw in oDoc and self.isCapitalKeyword[kw] and kw in indexing:
-				# self.keywordsWeight[kw] = 1.0
-				passCriteria.append((kw,math.log(len(correctTypeObjectsDict)*1.0/len(indexing[kw]))))
-			else:
-				self.keywordsWeight[kw] = weightKeyword
-		sumIDF = sum([x[1] for x in passCriteria])
-		for x in passCriteria:
-			self.keywordsWeight[x[0]] = x[1]*len(passCriteria)/sumIDF
 # ---------------------------------------------------------------------------------------------------
 # Calculation Methods
 def getAnswerSortedList(s, p, o, method):
@@ -166,16 +129,16 @@ def getAnswerSortedList(s, p, o, method):
 
 	# Calculate Score
 	if method.startswith('keyword'):
-		sortedCandidateObjects = calculateScoreKeyword(candidateObjects, s, p, o, clueList, method)
+		sortedCandidateObjects = calculateScoreKeyword(candidateObjects, s, p, o, clueList)
 	elif method.startswith('graph'):
-		sortedCandidateObjects = calculateScoreGraph(candidateObjects, s, p, o, method)
+		sortedCandidateObjects = calculateScoreGraph(candidateObjects, s, p, o)
 	elif method == 'combined':
 		sortedCandidateObjects = calculateScoreCombineMethod(candidateObjects, s, p, o, clueList)
 	elif method == 'combinedScore':
 		sortedCandidateObjects = calculateScoreCombineScoreMethod(candidateObjects, s, p, o, clueList)
 	return sortedCandidateObjects
 
-def calculateScoreGraph(candidateObjects, s, p, o, method = 'graph'): # Use graph structure
+def calculateScoreGraph(candidateObjects, s, p, o): # Use graph structure
 	ref = o 
 	query = """
 	SELECT ?o (COUNT (DISTINCT ?o1) as ?cnt) WHERE {
@@ -193,6 +156,83 @@ def calculateScoreGraph(candidateObjects, s, p, o, method = 'graph'): # Use grap
 	for obj in candidateObjects.values():
 		if '3' in obj.associationType:
 			obj.score += 1 # for 1 hob path
+
+	sortedCandidateObjects = candidateObjects.values()
+	sortedCandidateObjects.sort(key = lambda x: (x.score,len(x.associationType), x.linkInCount), reverse = True)
+	return sortedCandidateObjects
+
+def calculateScoreKeyword(candidateObjects, s, p, o, clueList): # Use Keyword Search 
+	incorrectObjectLabel = o.replace('http://dbpedia.org/resource/', '').lower() 
+	incorrectObjectAllDoc = createDocFromEntity(o, use = "allDoc")
+	for key in clueList.keys():
+		clue = clueList[key]
+		clue.calculateRelatedness(incorrectObjectAllDoc, useCondProb = False)
+		clue.calculateKeywordsWeight(incorrectObjectAllDoc)
+		print(clue.label, clue.relatedness)
+		print(clue.keywordsWeight)
+
+	for candidate in candidateObjects.values():
+		docWords = tokenize(candidate.doc)
+		sumScore = 0.0
+		for key, clue in clueList.iteritems(): 
+			if sum(clue.keywordsWeight.values()) == 0:
+				continue
+			score = 0.0
+			for kw in clue.keywords:
+				if kw in docWords or kw in tokenize(candidate.uri.replace('http://dbpedia.org/resource/', '')):
+					score += clue.keywordsWeight[kw]
+			sumScore += float((score + 1)) / (len(clue.keywords)+1)
+
+		if '1' in candidate.associationType and candidate.conditionalProb > tau:
+			if '3' in candidate.associationType or removeNamespace(candidate.uri).strip().lower().replace('_',' ') in incorrectObjectAllDoc:
+				sumScore += 1
+
+		candidate.score = sumScore
+
+	sortedCandidateObjects = candidateObjects.values()
+	sortedCandidateObjects.sort(key = lambda x: (x.score,len(x.associationType), x.linkInCount), reverse = True)
+	return sortedCandidateObjects
+
+def calculateScoreCombineMethod(candidateObjects, s, p, o, clueList): # Combine Graph Structure and Keyword Search
+	# Score from graph method
+	calculateScoreGraph(candidateObjects, s, p, o)
+	tempSort = candidateObjects.values()
+	tempSort.sort(key = lambda x:(x.score,len(x.associationType), x.linkInCount), reverse = True)
+	for rank, item in enumerate(tempSort):
+		item.rankFrom['graph'] = rank+1
+		item.score = 0.0
+
+	# Score from keyword method
+	calculateScoreKeyword(candidateObjects, s, p, o, clueList)
+	tempSort = candidateObjects.values()
+	tempSort.sort(key = lambda x:(x.score,len(x.associationType), x.linkInCount), reverse = True)
+	for rank, item in enumerate(tempSort):
+		item.rankFrom['keyword'] = rank+1
+		# Combine Score
+		item.score = -((item.rankFrom['keyword'] + item.rankFrom['graph']) / 2.0)
+
+	sortedCandidateObjects = candidateObjects.values()
+	sortedCandidateObjects.sort(key = lambda x: (x.score,len(x.associationType), x.linkInCount), reverse = True)
+	return sortedCandidateObjects
+
+def calculateScoreCombineScoreMethod(candidateObjects, s, p, o, clueList): # Combine Graph Structure and Keyword Search
+	# Score from graph method
+	calculateScoreGraph(candidateObjects, s, p, o)
+	maxGraphScore = max([x.score for x in candidateObjects.values()])
+	for item in candidateObjects.values():
+		item.rankFrom['graph'] = 1.0*item.score/maxGraphScore
+		item.score = 0.0
+
+	# Score from keyword method
+	calculateScoreKeyword(candidateObjects, s, p, o, clueList)
+	maxKeywordScore = max([x.score for x in candidateObjects.values()])
+	for item in candidateObjects.values():
+		if maxKeywordScore != 0:
+			item.rankFrom['keyword'] = 1.0*item.score/maxKeywordScore
+		else:
+			item.rankFrom['keyword'] = 0.0
+		# Combine Score
+		item.score = ((item.rankFrom['keyword'] + item.rankFrom['graph']) / 2.0)
 
 	sortedCandidateObjects = candidateObjects.values()
 	sortedCandidateObjects.sort(key = lambda x: (x.score,len(x.associationType), x.linkInCount), reverse = True)
@@ -535,7 +575,7 @@ def doIndexing(docDict):
 testcases = loadTestCases('RVEsSampledServer300-20171229033026.csv')
 for rve in testcases[5:6]:
 	print(rve)
-	print(processATestCase(rve, typeThreshold = 0.5, method = 'graph'))
+	print(processATestCase(rve, typeThreshold = 0.5, method = 'keyword'))
 
 
 		

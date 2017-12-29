@@ -262,16 +262,15 @@ def getAllRelatedPropOf(entity, propertyList):
 # ============================================
 # One-time run 
 # propertyList = getAllProperties()
-# propertyList = loadProperties('PropertyList-Server.txt')
 # priorProb = precalculatePriorProb('PriorProbability.txt')
 # conditionalProb = precalculateConditionalProb('ConditionalProbability-ServerBugFix.txt', propertyList)
-# weight = precalculateWeight('Weight-Server.txt', priorProb, conditionalProb)
+# weight = precalculateWeight('Weight-ServerBugFix.txt', priorProb, conditionalProb)
 # ============================================
 # Load pre-calculated data to run
 propertyList = loadProperties('PropertyList-Server.txt')
 priorProb = loadPriorProb('PriorProbability-Server.txt')
-conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
-weight = loadWeight(propertyList, 'Weight-Server.txt')
+conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-ServerBugFix.txt')
+weight = loadWeight(propertyList, 'Weight-ServerBugFix.txt')
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
 # print(probOfType('http://dbpedia.org/ontology/BasketballLeague', 'http://dbpedia.org/resource/England_B_national_football_team'))
 # print(topKTypes('http://dbpedia.org/resource/England_B_national_football_team',10))
