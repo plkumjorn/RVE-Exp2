@@ -3,18 +3,43 @@ from xmlOWL import *
 from SPARQLEndpoint import *
 import csv, sys, random, io
 import numpy as np
+from metadata import *
 # ============================================
 # Basic statistics from http://wiki.dbpedia.org/dbpedia-2016-04-statistics
 numAllEntities = 4678230.00
+numClasses = len(classList)
+numProperties = len(propertyList)
 # ============================================
-# PriorProb-related
-def indexOfClass(aClass):
-	allClasses = list(classDict.keys())
-	if aClass in allClasses:
-		return allClasses.index(aClass)
-	else:
+# Helper Functions
+def getIndexOfClass(c):
+	if c not in classList:
 		return None
+	return classList.index(c)
 
+def getIndexOfProperty(p, asSubject):
+	if p not in propertyList:
+		return None
+	if asSubject:
+		return propertyList.index(p)
+	else:
+		return numProperties + propertyList.index(p)
+
+def getPropertyOfIndex(idx):
+	if idx < 0 or idx >= 2 * numProperties:
+		return None
+	if idx < numProperties:
+		return propertyList[idx]
+	else:
+		return propertyList[idx - numProperties] + '-1'
+
+def getClassOfIndex(idx):
+	if idx < 0 or idx >= numClasses:
+		return None
+	else: 
+		return classList[idx]
+
+# ============================================
+# Prior Probability
 def countNumEntitiesOfType(aClass):
 	query = """
 	SELECT (COUNT(?s) AS ?count) 
@@ -26,59 +51,35 @@ def countNumEntitiesOfType(aClass):
 	return float(nrows[0]['count']['value'])
 
 def precalculatePriorProb(filename):
-	f = open(filename, 'w') 
-	priorProb = dict()
-	for c in classDict.keys():
-		f.write(c + '\t' + str(countNumEntitiesOfType(c)/numAllEntities) + '\n')
-		priorProb[c] = float(countNumEntitiesOfType(c)/numAllEntities)
-	f.close()
-	return priorProb
+	priorVector = np.zeros(numClasses)
+	for c in classList:
+		priorVector[getIndexOfClass(c)] = float(countNumEntitiesOfType(c)/numAllEntities)
+	with io.open(filename, 'wb') as csvfile:
+		writer = csv.writer(csvfile, delimiter=',')
+		writer.writerow(priorVector)
+	return priorVector
 
-def loadPriorProb(filename = 'PriorProbability.txt'):
+def loadPriorVector(filename):
 	f = open(filename, 'r')
-	priorProb = dict()
-	for line in f.readlines():
-		aTuple = line.strip().split('\t')
-		priorProb[aTuple[0]] = float(aTuple[1])
-	return priorProb
+	priorVector = [float(x) for x in f.readline().strip().split(',')]
+	print('Finish loading prior vector of ' + str(len(priorVector)) + ' classes.')
+	return np.array(priorVector)
+
 # ============================================
-# ConditionalProb-related
-def getAllProperties():
-	propertyList = list()
-	query = """
-	SELECT DISTINCT ?property WHERE {
-		{?property a rdf:Property.} UNION {?property a owl:ObjectProperty.} UNION {?property a owl:DatatypeProperty.}
-	}
-	""" 
-	# Select all properties
-	nrows, ncolumnHeader = SPARQLQuery(query)
-	for row in nrows:
-		prop = row['property']['value']
-		if prop.startswith('http://dbpedia.org/'):
-			propertyList.append(prop)
-	return propertyList
-
-def loadProperties(filename):
-	f = io.open(filename, 'r', encoding="utf-8")
-	propertyList = list()
-	for row in f.readlines():
-		propertyList.append(row.strip())
-	f.close()
-	return propertyList
-
+# Conditional Probability
 def findConditionalProbOfProperty(p, entitySubject = True):
-	ansVector = np.zeros(len(classDict.keys()))
+	ansVector = np.zeros(numClasses)
 
 	if entitySubject:
 		query = """
-		SELECT (COUNT(DISTINCT ?s) AS ?count) 
+		SELECT (COUNT(?s) AS ?count) 
 		WHERE {
 			?s <%s> [].
 		}
 		""" % (p)
 	else:
 		query = """
-		SELECT (COUNT(DISTINCT ?s) AS ?count) 
+		SELECT (COUNT(?s) AS ?count) 
 		WHERE {
 			[] <%s> ?s.
 		}
@@ -90,7 +91,7 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 
 	if entitySubject:
 		query = """
-		SELECT ?type COUNT(DISTINCT ?s) AS ?cnt WHERE{
+		SELECT ?type (COUNT(?s) AS ?cnt) WHERE{
 		?s <%s> [].
 		?s a ?type.
 		?type a owl:Class.
@@ -98,7 +99,7 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 		""" % (p)
 	else:
 		query = """
-		SELECT ?type COUNT(DISTINCT ?s) AS ?cnt WHERE{
+		SELECT ?type (COUNT(?s) AS ?cnt) WHERE{
 		[] <%s> ?s.
 		?s a ?type.
 		?type a owl:Class.
@@ -107,183 +108,107 @@ def findConditionalProbOfProperty(p, entitySubject = True):
 	nrows, ncolumnHeader = SPARQLQuery(query)
 	
 	for row in nrows:
-		idx = indexOfClass(row['type']['value'])
+		idx = getIndexOfClass(row['type']['value'])
 		if idx is not None:
 			ansVector[idx] = float(row['cnt']['value']) / totalNumEntities
 
+
+
+
+
 	return ansVector
 
-def precalculateConditionalProb(filename, propertyList):
-	# f = open(filename, 'w') 
-	# conditionalProb = dict()
-	# for prop in propertyList:
-	# 	condProb = findConditionalProbOfProperty(prop, entitySubject = True)
-	# 	conditionalProb[prop] = condProb
-	# 	f.write('"' + prop.encode('utf8') + '",' + ','.join(map(str, condProb)) +'\n')
-	# for prop in propertyList:
-	# 	condProb = findConditionalProbOfProperty(prop, entitySubject = False)
-	# 	conditionalProb[prop+'-1'] = condProb
-	# 	f.write('"' + prop.encode('utf8')+'-1"' + ',' + ','.join(map(str, condProb)) +'\n')
-	# f.close()
-	# return conditionalProb
-
+def precalculateConditionalProb(filename):
 	with io.open(filename, 'wb') as csvfile:
 		writer = csv.writer(csvfile, delimiter=',')
-		conditionalProb = dict()
+		conditionalProbMatrix = []
 		for prop in propertyList:
 			condProb = findConditionalProbOfProperty(prop, entitySubject = True)
-			conditionalProb[prop] = condProb
+			conditionalProbMatrix.append(condProb)
 			writer.writerow(list(condProb))
 		for prop in propertyList:
 			condProb = findConditionalProbOfProperty(prop, entitySubject = False)
-			conditionalProb[prop+'-1'] = condProb
+			conditionalProbMatrix.append(condProb)
 			writer.writerow(list(condProb))
-	return conditionalProb
+	return np.array(conditionalProbMatrix)
 
-def transformConditionalProbFile(filename = 'ConditionalProbability-MalformedCSV.txt'):
-	conditionalProb = dict()
-	with io.open(filename, 'r', encoding="utf8") as csvfile:
-		reader = csv.reader(csvfile, delimiter=',')
-		i = 0
-		for row in reader:
-			i += 1
-			if len(row) != 761:
-				conditionalProb[','.join(row[0:(len(row)-760)])] = row[(len(row)-760):]
-			else:
-				conditionalProb[row[0]] = row[1:]	
-	with open('ConditionalProbability2.txt', 'w', newline='') as csvfile:
-		writer = csv.writer(csvfile, delimiter=',')
-		for prop in conditionalProb.keys():
-			writer.writerow(conditionalProb[prop])
-	f = open('PropertyList.txt', 'w', encoding = 'utf8')
-	for prop in conditionalProb.keys():
-		f.write(prop + '\n')
-	f.close()	
+def loadConditionalProbMatrix(filename):
+	conditionalProbMatrix = np.loadtxt(filename, delimiter=',')
+	print('Finish loading conditional probabilities of ' + str(len(conditionalProbMatrix)) + ' properties / ' + str(len(conditionalProbMatrix[0])) + ' classes.')
+	return conditionalProbMatrix
 
-def loadConditionalProb(propertyList, filename):
-	conditionalProb = dict()
-	with io.open(filename, 'r', encoding="utf8") as csvfile:
-		reader = csv.reader(csvfile, delimiter=',')
-		i = 0
-		for row in reader:
-			conditionalProb[propertyList[i]] = np.array([float(x) for x in row])
-			i += 1 
-	print('Finish loading conditional probabilities of', len(conditionalProb), 'properties')
-	return conditionalProb
 # ============================================
 # Weight-related
-def precalculateWeight(filename, propertyList, priorProb, conditionalProb):
-	f = open(filename, 'w')
-	weight = dict()
-	prior = np.array(list(priorProb.values()))
-	priorVector = np.zeros(len(classDict))
-	for key in priorProb.keys():
-		priorVector[indexOfClass(key)] = priorProb[key]
-	for prop in propertyList:
-		# print(prior)
-		# print(conditionalProb[prop])
-		weight[prop] = np.sum((priorVector - conditionalProb[prop])**2)
-		f.write(str(weight[prop])+'\n')
-	f.close()
-	return weight
+def precalculateWeight(filename):
+	weightVector = []
+	for i in conditionalProbMatrix:
+		weightVector.append(np.sum((priorVector - i)**2))
+	with io.open(filename, 'wb') as csvfile:
+		writer = csv.writer(csvfile, delimiter=',')
+		writer.writerow(weightVector)
+	return np.array(weightVector)
 
-def loadWeight(propertyList, filename = 'Weight-Server.txt'):
+def loadWeight(filename):
 	f = open(filename, 'r')
-	weight = dict()
-	i = 0
-	for line in f.readlines():
-		w = float(line.strip())
-		weight[propertyList[i]] = w
-		i += 1
-	print('Finish loading weights of', len(weight), 'properties')
-	return weight
+	weightVector = [float(x) for x in f.readline().strip().split(',')]
+	print('Finish loading weight vector of ' + str(len(weightVector)) + ' properties.')
+	return np.array(weightVector)
+
 # ============================================
 # Predict type of an entity
-def probOfType(type, entity):
-	return probabilityOfType(type, entity, propertyList, priorProb, conditionalProb, weight)
+def getExistenceVectorOf(entity):
+	existenceVector = np.zeros(2 * numProperties)
+	query = """
+	SELECT ?p (COUNT(?o) AS ?cnt) WHERE{
+	<%s> ?p ?o.
+	} GROUP BY ?p
+	""" % (entity)
+	nrows, ncolumnHeader = SPARQLQuery(query)
+	for row in nrows:
+		idx = getIndexOfProperty(row['p']['value'], asSubject = True)
+		if idx is not None:
+			existenceVector[idx] = float(row['cnt']['value'])
+	query = """
+	SELECT ?p (COUNT(?o) AS ?cnt) WHERE{
+	?o ?p <%s>.
+	} GROUP BY ?p
+	""" % (entity)
+	nrows, ncolumnHeader = SPARQLQuery(query)
+	for row in nrows:
+		idx = getIndexOfProperty(row['p']['value'], asSubject = False)
+		if idx is not None:
+			existenceVector[idx] = float(row['cnt']['value'])
+	return existenceVector
 
-
-def probabilityOfType(type, entity, propertyList, priorProb, conditionalProb, weight):
-	idxOfType = indexOfClass(type)
-	if idxOfType == None:
-		return None
-	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = idxOfType)
-	return classVector
-
-
-def topKTypes(entity, k):
-	return returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight)
-
-def returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight):
-	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight)
-	classIndexSorted = np.argsort(classVector)[::-1]
-	classList = list(classDict.keys())
-	classListSorted = [classList[i] for i in classIndexSorted]
-	return [(classListSorted[i], classVector[classIndexSorted[i]]) for i in range(k)]
-	# classList = list(priorProb.keys())
-
-def calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = None):
-	allRelatedProp = getAllRelatedPropOf(entity, propertyList)
-	# print(allRelatedProp)
-	weightVector = np.array(list(weight.values()))
-	conditionalProbMatrix = np.array([conditionalProb[key] for key in conditionalProb.keys()])
-	propExistenceVector = np.zeros(len(propertyList))
-	for prop in allRelatedProp:
-		propExistenceVector[propertyList.index(prop)] = 1.0
+def calculateClassVector(entity, ofType = None):
+	propExistenceVector = getExistenceVectorOf(entity)
 	denominator = np.sum(propExistenceVector*weightVector)
 	if ofType is None:
 		nominator = np.dot(conditionalProbMatrix.T , propExistenceVector*weightVector)
 	else:
 		nominator = np.dot(conditionalProbMatrix.T[ofType] , propExistenceVector*weightVector)
 	classVector = nominator / denominator
-	# print(np.sum(conditionalProbMatrix > 1))
-	return classVector
+	return classVecto
 
-def getAllRelatedPropOf(entity, propertyList):
-	allRelatedProp = list()
-	query = """
-	SELECT DISTINCT ?p WHERE{
-	<%s> ?p [].
-	}
-	""" % (entity)
-	nrows, ncolumnHeader = SPARQLQuery(query)
-	for row in nrows:
-		if row['p']['value'] in propertyList:
-			allRelatedProp.append(row['p']['value'])
-	query = """
-	SELECT DISTINCT ?p WHERE{
-	[] ?p <%s>.
-	}
-	""" % (entity)
-	nrows, ncolumnHeader = SPARQLQuery(query)
-	for row in nrows:
-		if row['p']['value'] in propertyList:
-			allRelatedProp.append(row['p']['value']+'-1')
-	# print(allRelatedProp)
-	return allRelatedProp
+def probOfType(c, entity):
+	classIdx = getIndexOfClass(c)
+	if classIdx == None:
+		return None
+	prob = calculateClassVector(entity, ofType = classIdx)
+	return prob
 
+def topKTypes(entity, k):
+	classVector = calculateClassVector(entity)
+	classIndexSorted = np.argsort(classVector)[::-1]
+	return [(getClassOfIndex(i), classVector[i]) for i in classIndexSorted[0:k]]
 
 # ============================================
 # One-time run 
-propertyList = getAllProperties()
-print(propertyList)
-# priorProb = precalculatePriorProb('PriorProbability-Server2912.txt')
-# conditionalProb = precalculateConditionalProb('ConditionalProbability-Server2912.txt', propertyList)
-# weight = precalculateWeight('Weight-Server2912.txt', priorProb, conditionalProb)
-# ============================================
-# Load pre-calculated data to run
-# propertyList = loadProperties('PropertyList-Server.txt')
-# priorProb = loadPriorProb('PriorProbability-Server.txt')
-# print(list(priorProb.keys())[0:100] == list(classDict.keys())[0:100])
-# print(len(priorProb.keys()), len(classDict.keys()))
-# sys.exit(0)
-# conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
-# weight = loadWeight(propertyList, 'Weight-Server.txt')
-# weight = precalculateWeight('Weight-Server2912.txt', propertyList, priorProb, conditionalProb)
-# returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
-# print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
-# print('Hey')
-# print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
-# priorProb = loadPriorProb()
-
+priorVector = precalculatePriorProb('PriorVector-Server.csv')
+conditionalProbMatrix = precalculateConditionalProb('ConditionalProbMatrix-Server.csv')
+weightVector = precalculateWeight('WeightVector-Server.csv')
+print(probOfType('http://dbpedia.org/ontology/Country', 'http://dbpedia.org/resource/Australia'))
+print(topKTypes('http://dbpedia.org/resource/Australia',10))
+print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
+print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
 
