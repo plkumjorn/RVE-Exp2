@@ -201,11 +201,12 @@ def probOfType(type, entity):
 
 
 def probabilityOfType(type, entity, propertyList, priorProb, conditionalProb, weight):
-	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight)
 	classList = list(priorProb.keys())
 	if type not in classList:
 		return None
-	return classVector[classList.index(type)]
+	classVector = calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = classList.index(type))
+	return classVector
+
 
 def topKTypes(entity, k):
 	return returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight)
@@ -218,7 +219,7 @@ def returnTopKTypes(entity, k, propertyList, priorProb, conditionalProb, weight)
 	return [(classListSorted[i], classVector[classIndexSorted[i]]) for i in range(k)]
 	# classList = list(priorProb.keys())
 
-def calculateClassVector(entity, propertyList, conditionalProb, weight):
+def calculateClassVector(entity, propertyList, conditionalProb, weight, ofType = None):
 	allRelatedProp = getAllRelatedPropOf(entity, propertyList)
 	weightVector = np.array(list(weight.values()))
 	conditionalProbMatrix = np.array([conditionalProb[key] for key in conditionalProb.keys()])
@@ -226,9 +227,12 @@ def calculateClassVector(entity, propertyList, conditionalProb, weight):
 	for prop in allRelatedProp:
 		propExistenceVector[propertyList.index(prop)] = 1.0
 	denominator = np.sum(propExistenceVector*weightVector)
-	nominator = np.dot(conditionalProbMatrix.T , propExistenceVector*weightVector)
+	if ofType is None:
+		nominator = np.dot(conditionalProbMatrix.T , propExistenceVector*weightVector)
+	else:
+		nominator = np.dot(conditionalProbMatrix.T[ofType] , propExistenceVector*weightVector)
 	classVector = nominator / denominator
-	print(np.sum(conditionalProbMatrix > 1))
+	# print(np.sum(conditionalProbMatrix > 1))
 	return classVector
 
 def getAllRelatedPropOf(entity, propertyList):
@@ -258,19 +262,18 @@ def getAllRelatedPropOf(entity, propertyList):
 # ============================================
 # One-time run 
 # propertyList = getAllProperties()
-propertyList = loadProperties('PropertyList-Server.txt')
 # priorProb = precalculatePriorProb('PriorProbability.txt')
-conditionalProb = precalculateConditionalProb('ConditionalProbability-ServerBugFix.txt', propertyList)
-# weight = precalculateWeight('Weight-Server.txt', priorProb, conditionalProb)
+# conditionalProb = precalculateConditionalProb('ConditionalProbability-ServerBugFix.txt', propertyList)
+# weight = precalculateWeight('Weight-ServerBugFix.txt', priorProb, conditionalProb)
 # ============================================
 # Load pre-calculated data to run
-# propertyList = loadProperties('PropertyList-Server.txt')
-# priorProb = loadPriorProb('PriorProbability-Server.txt')
-# conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
-# weight = loadWeight(propertyList, 'Weight-Server.txt')
+propertyList = loadProperties('PropertyList-Server.txt')
+priorProb = loadPriorProb('PriorProbability-Server.txt')
+conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-ServerBugFix.txt')
+weight = loadWeight(propertyList, 'Weight-ServerBugFix.txt')
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
 # print(probOfType('http://dbpedia.org/ontology/BasketballLeague', 'http://dbpedia.org/resource/England_B_national_football_team'))
-# print(topKTypes('http://dbpedia.org/resource/Variety_show',10))
+# print(topKTypes('http://dbpedia.org/resource/England_B_national_football_team',10))
 # priorProb = loadPriorProb()
 
 
