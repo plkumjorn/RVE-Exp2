@@ -1,5 +1,6 @@
 SPARQLEndpoint.py
 SPARQLEndpoint.pyc
+ConditionalProbability*
 ConditionalProbability1.txt
 ConditionalProbability-MalformedCSV.txt
 ConditionalProbability-Server.txt

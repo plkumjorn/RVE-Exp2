@@ -265,24 +265,25 @@ def getAllRelatedPropOf(entity, propertyList):
 
 # ============================================
 # One-time run 
-# propertyList = getAllProperties()
+propertyList = getAllProperties()
+print(propertyList)
 # priorProb = precalculatePriorProb('PriorProbability-Server2912.txt')
 # conditionalProb = precalculateConditionalProb('ConditionalProbability-Server2912.txt', propertyList)
 # weight = precalculateWeight('Weight-Server2912.txt', priorProb, conditionalProb)
 # ============================================
 # Load pre-calculated data to run
-propertyList = loadProperties('PropertyList-Server.txt')
-priorProb = loadPriorProb('PriorProbability-Server.txt')
+# propertyList = loadProperties('PropertyList-Server.txt')
+# priorProb = loadPriorProb('PriorProbability-Server.txt')
 # print(list(priorProb.keys())[0:100] == list(classDict.keys())[0:100])
 # print(len(priorProb.keys()), len(classDict.keys()))
 # sys.exit(0)
-conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
-weight = loadWeight(propertyList, 'Weight-Server.txt')
+# conditionalProb = loadConditionalProb(propertyList, 'ConditionalProbability-Server.txt')
+# weight = loadWeight(propertyList, 'Weight-Server.txt')
 # weight = precalculateWeight('Weight-Server2912.txt', propertyList, priorProb, conditionalProb)
 # returnTopKTypes('http://dbpedia.org/resource/Safi_Airways', 10, propertyList, priorProb, conditionalProb, weight)
-print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
+# print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
 # print('Hey')
-print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
+# print(topKTypes('http://dbpedia.org/resource/Variety_Show',10))
 # priorProb = loadPriorProb()
 
 
