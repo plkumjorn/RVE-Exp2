@@ -30,7 +30,7 @@ tau = 0.9
 # ---------------------------------------------------------------------------------------------------
 def loadTestCases(filename):
 	testcases = list()
-	input_file = unicodecsv.DictReader(io.open(filename, encoding="utf-8"))
+	input_file = unicodecsv.DictReader(open(filename), encoding="utf-8")
 	for row in input_file:
 		testcases.append({'s': row['s'], 'p': row['p'], 'o': row['o'], 'r':row['r']})
 	return testcases
@@ -38,9 +38,11 @@ def loadTestCases(filename):
 def processATestCase(rve, typeThreshold, method):
 	prob = SDType.probOfType(rve['r'], rve['o'])
 	if prob > typeThreshold:
-		print('Retain the old object', rve)
+		print('Retain the old object', rve['o'], prob)
 		return None
-	return getAnswerSortedList(rve['s'], rve['p'], rve['o'], method)
+	else:
+		print('Change the object', rve['o'], prob)
+		return getAnswerSortedList(rve['s'], rve['p'], rve['o'], method)
 
 # ---------------------------------------------------------------------------------------------------
 # Data Structure
@@ -97,7 +99,7 @@ class ClueText:
 		else:
 			self.relatedness = float(len(kwInDoc)+1)/(len(self.keywords)+1)
 
-	def calculateKeywordsWeight(self, candidateObjects):
+	def calculateKeywordsWeight(self, oDoc):
 		for kw in self.keywords:
 			if kw in oDoc and self.isCapitalKeyword[kw]:
 				self.keywordsWeight[kw] = 1.0
@@ -572,10 +574,38 @@ def doIndexing(docDict):
 				invertedIndex[kw] = [(key, kw, docIndex[kw], float(docIndex[kw])/len(doc))]
 	return invertedIndex
 
+def stem_tokens(tokens, stemmer):
+	stemmed = []
+	for item in tokens:
+		stemmed.append(stemmer.stem(item))
+	return stemmed
+
+def tokenize(text):
+	# tokens = nltk.word_tokenize(text)
+	tokens = tokenizer.tokenize(text)
+	stems = stem_tokens(tokens, stemmer)
+	return stems
+
+def translate_non_alphanumerics(to_translate, translate_to=u'_'):
+	not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
+	translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
+	return to_translate.translate(translate_table)
+
+with open("../helpers/wordsEn.txt") as word_file:
+	english_words = set(word.strip().lower() for word in word_file)
+
+def is_english_word(word):
+	return word.lower() in english_words
+
 testcases = loadTestCases('RVEsSampledServer300-20171229033026.csv')
+
 for rve in testcases[5:6]:
-	print(rve)
-	print(processATestCase(rve, typeThreshold = 0.5, method = 'graph'))
+	print(rve['s'], rve['p'], rve['o'])
+	sortedCandidates = processATestCase(rve, typeThreshold = 0.5, method = 'keyword')
+	if sortedCandidates is not None:
+		for i in range(min(10, len(sortedCandidates))):
+			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
+
 
 
 		
