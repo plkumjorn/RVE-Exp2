@@ -38,10 +38,10 @@ def loadTestCases(filename):
 def processATestCase(rve, typeThreshold, method):
 	prob = SDType.probOfType(rve['r'], rve['o'])
 	if prob > typeThreshold:
-		print('Retain the old object', rve['o'], prob)
+		print('Retain the old object', rve['o'], rve['r'], prob)
 		return None
 	else:
-		print('Change the object', rve['o'], prob)
+		print('Change the object', rve['o'], rve['r'], prob)
 		return getAnswerSortedList(rve['s'], rve['p'], rve['o'], method)
 
 # ---------------------------------------------------------------------------------------------------
@@ -591,20 +591,32 @@ def translate_non_alphanumerics(to_translate, translate_to=u'_'):
 	translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
 	return to_translate.translate(translate_table)
 
-with open("../helpers/wordsEn.txt") as word_file:
+with open("wordsEn.txt") as word_file:
 	english_words = set(word.strip().lower() for word in word_file)
 
 def is_english_word(word):
 	return word.lower() in english_words
 
-testcases = loadTestCases('RVEsSampledServer300-20171229033026.csv')
+testFilename = 'RVEsSampledServer300-20171229033026.csv'
+method = 'combinedScore'
 
-for rve in testcases[5:6]:
-	print(rve['s'], rve['p'], rve['o'])
-	sortedCandidates = processATestCase(rve, typeThreshold = 0.5, method = 'keyword')
+testcases = loadTestCases(testFilename)
+testRange = range(len(testcases))[0:]
+
+f = open('output-'+testFilename[:-4]+'-'+method+'.csv', 'a')
+w = unicodecsv.writer(f, encoding='utf-8')
+# w.writerow(['s','p','o','r'])
+for k in testRange:
+	rve = testcases[k]
+	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
+	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
 	if sortedCandidates is not None:
-		for i in range(min(10, len(sortedCandidates))):
+		for i in range(min(25, len(sortedCandidates))):
 			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
+		w.writerow([rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
+	else:
+		w.writerow([rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
+f.close()
 
 
 
