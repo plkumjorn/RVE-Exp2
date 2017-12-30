@@ -3,7 +3,7 @@
 
 # ---------------------------------------------------------------------------------------------------
 # Basic libraries
-import sys, json, csv, re, string, nltk, math, urllib, io, unicodecsv
+import sys, json, csv, re, string, nltk, math, urllib, io, unicodecsv, time
 import numpy as np
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.porter import *
@@ -601,9 +601,9 @@ testFilename = 'RVEsSampledServer300-20171229033026.csv'
 method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[0:]
+testRange = range(len(testcases))[250:]
 
-f = open('output-'+testFilename[:-4]+'-'+method+'.csv', 'a')
+f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
 # w.writerow(['s','p','o','r'])
 for k in testRange:
@@ -613,9 +613,9 @@ for k in testRange:
 	if sortedCandidates is not None:
 		for i in range(min(25, len(sortedCandidates))):
 			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
-		w.writerow([rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
 	else:
-		w.writerow([rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
 f.close()
 
 
