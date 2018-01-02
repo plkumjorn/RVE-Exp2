@@ -385,6 +385,8 @@ def findRelatedProperty(uri, op, threshold):
 	""" % (uri, op.range)
 	cooccurrences, cooccurrencesColumnHeader = SPARQLQuery(query)
 	cooccurrencesProperty = [(prop['p']['value'], float(prop['count']['value'])) for prop in cooccurrences]
+	if cooccurrencesProperty == []:
+		return [], []	
 	maxCount = float(max(cooccurrencesProperty, key=lambda x: x[1])[1])
 	cooccurrencesProperty = [(prop[0], prop[1], prop[1]/maxCount) for prop in cooccurrencesProperty]
 
@@ -604,7 +606,7 @@ testFilename = 'RVEsSampledServer300-20171229033026.csv'
 method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[100:150]
+testRange = range(len(testcases))[31:550]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
