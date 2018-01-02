@@ -222,7 +222,10 @@ def calculateScoreCombineScoreMethod(candidateObjects, s, p, o, clueList): # Com
 	calculateScoreGraph(candidateObjects, s, p, o)
 	maxGraphScore = max([x.score for x in candidateObjects.values()])
 	for item in candidateObjects.values():
-		item.rankFrom['graph'] = 1.0*item.score/maxGraphScore
+		if maxGraphScore != 0:
+			item.rankFrom['graph'] = 1.0*item.score/maxGraphScore
+		else:
+			item.rankFrom['graph'] = 0.0
 		item.score = 0.0
 
 	# Score from keyword method
@@ -601,7 +604,7 @@ testFilename = 'RVEsSampledServer300-20171229033026.csv'
 method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[200:250]
+testRange = range(len(testcases))[212:250]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
@@ -610,7 +613,9 @@ for k in testRange:
 	rve = testcases[k]
 	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
 	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
-	if sortedCandidates is not None:
+	if sortedCandidates == []:
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '-'])
+	elif sortedCandidates is not None:
 		for i in range(min(25, len(sortedCandidates))):
 			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
