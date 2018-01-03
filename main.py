@@ -427,7 +427,7 @@ def getEnglishLabel(o):
 	if len(nrows) > 0:
 		return nrows[0]['lab']['value']
 	else:
-		return None
+		return removeNamespace(o).strip().replace('_',' ')
 
 def findLinkInCount(prop, objURI):
 	if objURI not in linkInCountsMemo:
@@ -606,7 +606,7 @@ testFilename = 'RVEsSampledServer300-20171229033026.csv'
 method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[31:550]
+testRange = range(len(testcases))[90:100]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
