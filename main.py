@@ -606,7 +606,7 @@ testFilename = 'RVEsSampledServer300-20171229033026.csv'
 method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[254:]
+testRange = range(len(testcases))[134:151]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
