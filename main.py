@@ -5,6 +5,7 @@
 # Basic libraries
 import sys, json, csv, re, string, nltk, math, urllib, io, unicodecsv, time
 import numpy as np
+import pickle
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.porter import *
 from nltk.stem.snowball import *
@@ -480,7 +481,7 @@ def createDocFromEntity(uri, use = "abstract"):
 					doc += ' ; ' + removeNamespace(row['isValueOf']['value'])			
 		return doc.lower()
 
-def getCorrectTypeObjectsDict(op):
+def getCorrectTypeObjectsDict(op, linkInCalculate = True):
 	correctTypeObjectsDict = {}	
 	i = 0
 	while True:
@@ -507,22 +508,23 @@ def getCorrectTypeObjectsDict(op):
 		print('1', i)
 		i += 1
 
-	i = 0
-	while True:
-		query = """
-		SELECT ?a, COUNT(?s) as ?cnt
-		WHERE {
-		?a a <%s>.
-		?s <%s> ?a.
-		} GROUP BY ?a LIMIT 10000 OFFSET %d
-		""" % (op.range, op.uri, i*10000)
-		nrows, ncolumnHeader = SPARQLQuery(query)
-		if len(nrows) == 0:
-			break
-		for row in nrows:
-			linkInCountsMemo[row['a']['value']] = float(row['cnt']['value'])
-		print('2', i)
-		i += 1
+	if linkInCalculate:
+		i = 0
+		while True:
+			query = """
+			SELECT ?a, COUNT(?s) as ?cnt
+			WHERE {
+			?a a <%s>.
+			?s <%s> ?a.
+			} GROUP BY ?a LIMIT 10000 OFFSET %d
+			""" % (op.range, op.uri, i*10000)
+			nrows, ncolumnHeader = SPARQLQuery(query)
+			if len(nrows) == 0:
+				break
+			for row in nrows:
+				linkInCountsMemo[row['a']['value']] = float(row['cnt']['value'])
+			print('2', i)
+			i += 1
 
 	i = 0
 	while True:
@@ -602,28 +604,32 @@ with open("wordsEn.txt") as word_file:
 def is_english_word(word):
 	return word.lower() in english_words
 
-testFilename = 'RVEsSampledServer300-20171229033026.csv'
-method = 'combinedScore'
+op = objectPropertyDict['http://dbpedia.org/ontology/bandMember'] 
+correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
+pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
+pickle.dump(redirectLinkOf,open("redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
+# testFilename = 'RVEsSampledServer300-20171229033026.csv'
+# method = 'combinedScore'
 
-testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[9:10]
+# testcases = loadTestCases(testFilename)
+# testRange = range(len(testcases))[9:10]
 
-f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
-w = unicodecsv.writer(f, encoding='utf-8')
-# w.writerow(['s','p','o','r'])
-for k in testRange:
-	rve = testcases[k]
-	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
-	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
-	if sortedCandidates == []:
-		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '-'])
-	elif sortedCandidates is not None:
-		for i in range(min(25, len(sortedCandidates))):
-			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
-		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
-	else:
-		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
-f.close()
+# f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
+# w = unicodecsv.writer(f, encoding='utf-8')
+# # w.writerow(['s','p','o','r'])
+# for k in testRange:
+# 	rve = testcases[k]
+# 	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
+# 	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
+# 	if sortedCandidates == []:
+# 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '-'])
+# 	elif sortedCandidates is not None:
+# 		for i in range(min(25, len(sortedCandidates))):
+# 			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
+# 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
+# 	else:
+# 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
+# f.close()
 
 
 
