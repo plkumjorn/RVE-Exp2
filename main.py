@@ -567,18 +567,11 @@ def removeNamespace(stri):
 
 def doIndexing(docDict):
 	invertedIndex = dict()
-<<<<<<< HEAD
-	i = 0
-	for key in docDict.keys():
-		if i%10000 == 0:
-			print("indexing", i)
-=======
 	print('NumEntities =',len(docDict))
 	i = 0
 	for key in docDict.keys():
 		if i%10000 == 0:
 			print('indexing', i)
->>>>>>> 9976085cdefb4772c893ee7e5ec28cc8982f79f5
 		val = docDict[key]
 		doc = val.lower()
 		doc = tokenizer.tokenize(doc)
