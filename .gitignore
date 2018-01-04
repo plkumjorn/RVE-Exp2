@@ -8,3 +8,5 @@ ConditionalProbability-ServerBugFix.txt
 indexing*
 correctTypeObjectsDict*.pickle
 redirectLinkOf*.pickle
+preprocessing/*
+.idea/*

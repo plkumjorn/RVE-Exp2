@@ -567,10 +567,18 @@ def removeNamespace(stri):
 
 def doIndexing(docDict):
 	invertedIndex = dict()
+<<<<<<< HEAD
 	i = 0
 	for key in docDict.keys():
 		if i%10000 == 0:
 			print("indexing", i)
+=======
+	print('NumEntities =',len(docDict))
+	i = 0
+	for key in docDict.keys():
+		if i%10000 == 0:
+			print('indexing', i)
+>>>>>>> 9976085cdefb4772c893ee7e5ec28cc8982f79f5
 		val = docDict[key]
 		doc = val.lower()
 		doc = tokenizer.tokenize(doc)
@@ -608,6 +616,7 @@ with open("wordsEn.txt") as word_file:
 def is_english_word(word):
 	return word.lower() in english_words
 
+
 op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
 # correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
 # pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
@@ -618,6 +627,7 @@ indexing = doIndexing(correctTypeObjectsDict)
 pickle.dump(indexing,open("indexing"+getEnglishLabel(op.range)+".pickle","wb"))
 
 
+# ------------------------------------------------------------------------------------------
 # testFilename = 'RVEsSampledServer300-20171229033026.csv'
 # method = 'combinedScore'
 
