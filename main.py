@@ -497,8 +497,8 @@ def createDocFromEntity(uri, use = "abstract"):
 
 def getCorrectTypeObjectsDict(op, linkInCalculate = True):
 	if op.range == 'http://dbpedia.org/ontology/Person' or op.range == 'http://dbpedia.org/ontology/Agent':
-		correctTypeObjectsDict = pickle.load(open("preprocessing/correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
-		redirectLinkOf = pickle.load(open("preprocessing/redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
+		correctTypeObjectsDict = pickle.load(open("preprocessing/correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","rb"))
+		redirectLinkOf = pickle.load(open("preprocessing/redirectLinkOf"+getEnglishLabel(op.range)+".pickle","rb"))
 		for key in correctTypeObjectsDict.keys():
 			linkInCountsMemo[key] = 0
 		i = 0
@@ -645,6 +645,11 @@ with open("wordsEn.txt") as word_file:
 def is_english_word(word):
 	return word.lower() in english_words
 
+def inside(kwList, abstract):
+	doc = abstract.lower()
+	doc = tokenizer.tokenize(doc)
+	doc = [stemmer.stem(word) for word in doc]
+	return len(set(kw).intersection(set(doc))) > 0
 
 # op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
 # correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
@@ -661,7 +666,8 @@ testFilename = 'RVEsSampledServer300-20171229033026.csv'
 method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
-testRange = range(len(testcases))[9:10]
+# testRange = range(len(testcases))[9:10]
+testRange = [10, 74]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
