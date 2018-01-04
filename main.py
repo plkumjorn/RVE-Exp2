@@ -122,7 +122,10 @@ def getAnswerSortedList(s, p, o, method):
 	op = objectPropertyDict[p]
 	rangeLabel = getEnglishLabel(op.range)
 	correctTypeObjectsDict = getCorrectTypeObjectsDict(op)
-	indexing = doIndexing(correctTypeObjectsDict)
+	if op.range == 'http://dbpedia.org/ontology/Person' or op.range == 'http://dbpedia.org/ontology/Agent':
+		indexing = None
+	else:
+		indexing = doIndexing(correctTypeObjectsDict)
 	relatedProperty, correlatedProperty = findRelatedProperty(p, op, threshold = tau)
 	
 	# Create Search Space
@@ -327,11 +330,22 @@ def getSearchSpace(s, p, o, op, relatedProperty, correlatedProperty, rangeLabel)
 	if len(allKeywords) > 0:
 		# Search from inverted index
 		cList = [] # Candidate List
-		for kw in allKeywords:
-			if kw not in indexing:
-				continue
-			else:
-				cList.extend([profile[0] for profile in indexing[kw]])
+		if indexing is not None:
+			for kw in allKeywords:
+				if kw not in indexing:
+					continue
+				else:
+					cList.extend([profile[0] for profile in indexing[kw]])
+		else:
+			for kw in allKeywords:
+				print('Check Keyword', kw)
+				i = 0
+				for key in correctTypeObjectsDict.keys():
+					if i%10000 == 0:
+						print(i)
+					if inside(kw, correctTypeObjectsDict[key]):
+						cList.append(key)
+					i += 1
 		cList = list(set(cList))
 		for uri in cList:
 			if uri not in candidateObjects:
@@ -482,6 +496,28 @@ def createDocFromEntity(uri, use = "abstract"):
 		return doc.lower()
 
 def getCorrectTypeObjectsDict(op, linkInCalculate = True):
+	if op.range == 'http://dbpedia.org/ontology/Person' or op.range == 'http://dbpedia.org/ontology/Agent':
+		correctTypeObjectsDict = pickle.load(open("preprocessing/correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
+		redirectLinkOf = pickle.load(open("preprocessing/redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
+		for key in correctTypeObjectsDict.keys():
+			linkInCountsMemo[key] = 0
+		i = 0
+		while True:
+			query = """
+			SELECT ?a, COUNT(?s) as ?cnt
+			WHERE {
+			?a a <%s>.
+			?s <%s> ?a.
+			} GROUP BY ?a LIMIT 10000 OFFSET %d
+			""" % (op.range, op.uri, i*10000)
+			nrows, ncolumnHeader = SPARQLQuery(query)
+			if len(nrows) == 0:
+				break
+			for row in nrows:
+				linkInCountsMemo[row['a']['value']] = float(row['cnt']['value'])
+			print('2', i)
+			i += 1
+		return correctTypeObjectsDict
 	correctTypeObjectsDict = {}	
 	i = 0
 	while True:
@@ -610,39 +646,39 @@ def is_english_word(word):
 	return word.lower() in english_words
 
 
-op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
+# op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
 # correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
 # pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
 # pickle.dump(redirectLinkOf,open("redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
 
-correctTypeObjectsDict = pickle.load(open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle", "rb" ))
-indexing = doIndexing(correctTypeObjectsDict)
-pickle.dump(indexing,open("indexing"+getEnglishLabel(op.range)+".pickle","wb"))
+
+# indexing = doIndexing(correctTypeObjectsDict)
+# pickle.dump(indexing,open("indexing"+getEnglishLabel(op.range)+".pickle","wb"))
 
 
 # ------------------------------------------------------------------------------------------
-# testFilename = 'RVEsSampledServer300-20171229033026.csv'
-# method = 'combinedScore'
+testFilename = 'RVEsSampledServer300-20171229033026.csv'
+method = 'combinedScore'
 
-# testcases = loadTestCases(testFilename)
-# testRange = range(len(testcases))[9:10]
+testcases = loadTestCases(testFilename)
+testRange = range(len(testcases))[9:10]
 
-# f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
-# w = unicodecsv.writer(f, encoding='utf-8')
-# # w.writerow(['s','p','o','r'])
-# for k in testRange:
-# 	rve = testcases[k]
-# 	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
-# 	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
-# 	if sortedCandidates == []:
-# 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '-'])
-# 	elif sortedCandidates is not None:
-# 		for i in range(min(25, len(sortedCandidates))):
-# 			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
-# 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
-# 	else:
-# 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
-# f.close()
+f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
+w = unicodecsv.writer(f, encoding='utf-8')
+# w.writerow(['s','p','o','r'])
+for k in testRange:
+	rve = testcases[k]
+	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
+	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
+	if sortedCandidates == []:
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '-'])
+	elif sortedCandidates is not None:
+		for i in range(min(25, len(sortedCandidates))):
+			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
+	else:
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
+f.close()
 
 
 
