@@ -567,7 +567,10 @@ def removeNamespace(stri):
 
 def doIndexing(docDict):
 	invertedIndex = dict()
+	i = 0
 	for key in docDict.keys():
+		if i%10000 == 0:
+			print("indexing", i)
 		val = docDict[key]
 		doc = val.lower()
 		doc = tokenizer.tokenize(doc)
@@ -579,6 +582,7 @@ def doIndexing(docDict):
 				invertedIndex[kw].append((key, kw, docIndex[kw], float(docIndex[kw])/len(doc)))
 			else:
 				invertedIndex[kw] = [(key, kw, docIndex[kw], float(docIndex[kw])/len(doc))]
+		i += 1
 	return invertedIndex
 
 def stem_tokens(tokens, stemmer):
@@ -604,10 +608,16 @@ with open("wordsEn.txt") as word_file:
 def is_english_word(word):
 	return word.lower() in english_words
 
-op = objectPropertyDict['http://dbpedia.org/ontology/bandMember'] 
-correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
-pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
-pickle.dump(redirectLinkOf,open("redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
+op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
+# correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
+# pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
+# pickle.dump(redirectLinkOf,open("redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
+
+correctTypeObjectsDict = pickle.load(open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle", "rb" ))
+indexing = doIndexing(correctTypeObjectsDict)
+pickle.dump(indexing,open("indexing"+getEnglishLabel(op.range)+".pickle","wb"))
+
+
 # testFilename = 'RVEsSampledServer300-20171229033026.csv'
 # method = 'combinedScore'
 
