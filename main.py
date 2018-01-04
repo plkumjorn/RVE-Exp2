@@ -337,15 +337,13 @@ def getSearchSpace(s, p, o, op, relatedProperty, correlatedProperty, rangeLabel)
 				else:
 					cList.extend([profile[0] for profile in indexing[kw]])
 		else:
-			for kw in allKeywords:
-				print('Check Keyword', kw)
-				i = 0
-				for key in correctTypeObjectsDict.keys():
-					if i%10000 == 0:
-						print(i)
-					if inside(kw, correctTypeObjectsDict[key]):
-						cList.append(key)
-					i += 1
+			i = 0
+			for key in correctTypeObjectsDict.keys():
+				if i%10000 == 0:
+					print('Check Keyword', i)
+				if inside(allKeywords, correctTypeObjectsDict[key]):
+					cList.append(key)
+				i += 1
 		cList = list(set(cList))
 		for uri in cList:
 			if uri not in candidateObjects:
