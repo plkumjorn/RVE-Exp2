@@ -647,7 +647,7 @@ def inside(kwList, abstract):
 	doc = abstract.lower()
 	doc = tokenizer.tokenize(doc)
 	doc = [stemmer.stem(word) for word in doc]
-	return len(set(kw).intersection(set(doc))) > 0
+	return len(set(kwList).intersection(set(doc))) > 0
 
 # op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
 # correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
@@ -665,7 +665,7 @@ method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
 # testRange = range(len(testcases))[9:10]
-testRange = [10, 74]
+testRange = [86,89,133, 169, 191, 198, 253]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
