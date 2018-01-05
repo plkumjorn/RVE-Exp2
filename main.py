@@ -494,6 +494,7 @@ def createDocFromEntity(uri, use = "abstract"):
 		return doc.lower()
 
 def getCorrectTypeObjectsDict(op, linkInCalculate = True):
+	global redirectLinkOf, linkInCountsMemo
 	if op.range == 'http://dbpedia.org/ontology/Person' or op.range == 'http://dbpedia.org/ontology/Agent':
 		correctTypeObjectsDict = pickle.load(open("preprocessing/correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","rb"))
 		redirectLinkOf = pickle.load(open("preprocessing/redirectLinkOf"+getEnglishLabel(op.range)+".pickle","rb"))
@@ -516,6 +517,7 @@ def getCorrectTypeObjectsDict(op, linkInCalculate = True):
 			print('2', i)
 			i += 1
 		return correctTypeObjectsDict
+
 	correctTypeObjectsDict = {}	
 	i = 0
 	while True:
@@ -661,11 +663,11 @@ def inside(kwList, abstract):
 
 # ------------------------------------------------------------------------------------------
 testFilename = 'RVEsSampledServer300-20171229033026.csv'
-method = 'combinedScore'
+method = 'keyword'
 
 testcases = loadTestCases(testFilename)
-# testRange = range(len(testcases))[9:10]
-testRange = [86,89,133, 169, 191, 198, 253]
+testRange = range(len(testcases))
+# testRange = [86,89,133, 169, 191, 198, 253]
 
 f = open('output-'+testFilename[:-4]+'-'+method+ time.strftime("%Y%m%d%H%M%S") +'.csv', 'a')
 w = unicodecsv.writer(f, encoding='utf-8')
@@ -675,13 +677,13 @@ for k in testRange:
 	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
 	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
 	if sortedCandidates == []:
-		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '-'])
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '1', '-'])
 	elif sortedCandidates is not None:
 		for i in range(min(25, len(sortedCandidates))):
 			print(i+1, sortedCandidates[i].uri, sortedCandidates[i].score) 
-		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r']] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '1'] + [candidate.uri for candidate in sortedCandidates[0:min(25, len(sortedCandidates))]])
 	else:
-		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], 'None'])
+		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'],'0', 'None'])
 f.close()
 
 
