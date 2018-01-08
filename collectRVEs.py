@@ -11,7 +11,7 @@ def getPropertyRVEStats():
 		if op.range is not None and op.range in classDict:
 			propertyToCheck.append((uri, op.range))
 
-	with open('PropertyRVEStats.csv', 'wb') as csvfile:
+	with open('PropertyRVEStatsNoRedirects.csv', 'wb') as csvfile:
 		writer = csv.writer(csvfile, delimiter=',')
 		writer.writerow(['Property', 'Range', 'numAllStatements', 'numRVEStatements'])
 		for prop in propertyToCheck:
@@ -29,6 +29,7 @@ def getPropertyRVEStats():
 			WHERE {
 				?s <%s> ?o.
 				FILTER NOT EXISTS { ?o a <%s>.}
+				FILTER NOT EXISTS { ?o <http://dbpedia.org/ontology/wikiPageRedirects> ?r}
 			} 
 			""" % (prop[0], prop[1])
 			nrows, columnHeader = SPARQLQuery(query)
@@ -53,13 +54,14 @@ def getRVEbyID(property, offset):
 	WHERE {
 		?s <%s> ?o.
 		FILTER NOT EXISTS { ?o a <%s>.}
+		FILTER NOT EXISTS { ?o <http://dbpedia.org/ontology/wikiPageRedirects> ?r}
 	} LIMIT 1 OFFSET %d
 	""" % (property, objectPropertyDict[property].range, offset)
 	nrows, columnHeader = SPARQLQuery(query)
 	return {'s': nrows[0]['s']['value'], 'p': property, 'o': nrows[0]['o']['value'], 'r': objectPropertyDict[property].range, 'id': (property, offset)}
 
 def getRVEDataset(numRVEs):
-	selected = randomRVEIDs('PropertyRVEStats-Server.csv', numRVEs)
+	selected = randomRVEIDs('PropertyRVEStatsNoRedirects.csv', numRVEs)
 	RVEs = list()
 	with open('RVEsSampledServer'+ str(numRVEs) + '-' + time.strftime("%Y%m%d%H%M%S") +'.csv', 'wb') as csvfile:
 		writer = csv.writer(csvfile, delimiter=',')
@@ -70,4 +72,5 @@ def getRVEDataset(numRVEs):
 			RVEs.append(rve)
 	return RVEs
 
+# getPropertyRVEStats()
 getRVEDataset(300)
