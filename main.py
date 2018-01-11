@@ -28,6 +28,7 @@ relatedProperty = None
 correlatedProperty = None
 weightKeyword = 0
 tau = 0.9
+preprocessedProperties = ['http://dbpedia.org/ontology/Person', 'http://dbpedia.org/ontology/Agent', 'http://dbpedia.org/ontology/Place']
 # ---------------------------------------------------------------------------------------------------
 def loadTestCases(filename):
 	testcases = list()
@@ -122,7 +123,7 @@ def getAnswerSortedList(s, p, o, method):
 	op = objectPropertyDict[p]
 	rangeLabel = getEnglishLabel(op.range)
 	correctTypeObjectsDict = getCorrectTypeObjectsDict(op)
-	if op.range == 'http://dbpedia.org/ontology/Person' or op.range == 'http://dbpedia.org/ontology/Agent':
+	if op.range in preprocessedProperties:
 		indexing = None
 	else:
 		indexing = doIndexing(correctTypeObjectsDict)
@@ -495,19 +496,22 @@ def createDocFromEntity(uri, use = "abstract"):
 
 def getCorrectTypeObjectsDict(op, linkInCalculate = True):
 	global redirectLinkOf, linkInCountsMemo
-	if op.range == 'http://dbpedia.org/ontology/Person' or op.range == 'http://dbpedia.org/ontology/Agent':
-		correctTypeObjectsDict = pickle.load(open("preprocessing/correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","rb"))
-		redirectLinkOf = pickle.load(open("preprocessing/redirectLinkOf"+getEnglishLabel(op.range)+".pickle","rb"))
+	
+	# if True:
+	# 	pass
+	if op.range in preprocessedProperties:
+		correctTypeObjectsDict = pickle.load(open("preprocessing/correctTypeObjectsDict0801"+getEnglishLabel(op.range)+".pickle","rb"))
+		redirectLinkOf = pickle.load(open("preprocessing/redirectLinkOf0801"+getEnglishLabel(op.range)+".pickle","rb"))
 		for key in correctTypeObjectsDict.keys():
 			linkInCountsMemo[key] = 0
 		i = 0
 		while True:
-			query = """
+			query = """ 
 			SELECT ?a, COUNT(?s) as ?cnt
 			WHERE {
 			?a a <%s>.
 			?s <%s> ?a.
-			} GROUP BY ?a LIMIT 10000 OFFSET %d
+			} GROUP BY ?a LIMIT 10000 OFFSET %d 
 			""" % (op.range, op.uri, i*10000)
 			nrows, ncolumnHeader = SPARQLQuery(query)
 			if len(nrows) == 0:
@@ -517,7 +521,7 @@ def getCorrectTypeObjectsDict(op, linkInCalculate = True):
 			print('2', i)
 			i += 1
 		return correctTypeObjectsDict
-
+	
 	correctTypeObjectsDict = {}	
 	i = 0
 	while True:
@@ -651,11 +655,11 @@ def inside(kwList, abstract):
 	doc = [stemmer.stem(word) for word in doc]
 	return len(set(kwList).intersection(set(doc))) > 0
 
-# op = objectPropertyDict['http://dbpedia.org/ontology/producer'] 
+# op = objectPropertyDict['http://dbpedia.org/ontology/birthPlace'] 
 # correctTypeObjectsDict = getCorrectTypeObjectsDict(op, linkInCalculate = False)
-# pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict"+getEnglishLabel(op.range)+".pickle","wb"))
-# pickle.dump(redirectLinkOf,open("redirectLinkOf"+getEnglishLabel(op.range)+".pickle","wb"))
-
+# pickle.dump(correctTypeObjectsDict,open("correctTypeObjectsDict0801"+getEnglishLabel(op.range)+".pickle","wb"))
+# pickle.dump(redirectLinkOf,open("redirectLinkOf0801"+getEnglishLabel(op.range)+".pickle","wb"))
+# sys.exit(0)
 
 # indexing = doIndexing(correctTypeObjectsDict)
 # pickle.dump(indexing,open("indexing"+getEnglishLabel(op.range)+".pickle","wb"))
@@ -663,6 +667,7 @@ def inside(kwList, abstract):
 
 # ------------------------------------------------------------------------------------------
 testFilename = 'RVEsSampledServer300-20171229033026.csv'
+testFilename = 'RVEsSampledServer300-20180109062843.csv'
 method = 'keyword'
 
 testcases = loadTestCases(testFilename)

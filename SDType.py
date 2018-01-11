@@ -204,12 +204,12 @@ def topKTypes(entity, k):
 
 # ============================================
 # One-time run 
-# priorVector = precalculatePriorProb('PriorVector-Server.csv')
-# conditionalProbMatrix = precalculateConditionalProb('ConditionalProbMatrix-Server.csv')
-# weightVector = precalculateWeight('WeightVector-Server.csv')
-priorVector = loadPriorVector('PriorVector-Server.csv')
-conditionalProbMatrix = loadConditionalProbMatrix('ConditionalProbMatrix-Server.csv')
-weightVector = loadWeight('WeightVector-Server.csv')
+# priorVector = precalculatePriorProb('PriorVector-Server0801.csv')
+# conditionalProbMatrix = precalculateConditionalProb('ConditionalProbMatrix-Server0801.csv')
+# weightVector = precalculateWeight('WeightVector-Server0801.csv')
+priorVector = loadPriorVector('PriorVector-Server0801.csv')
+conditionalProbMatrix = loadConditionalProbMatrix('ConditionalProbMatrix-Server0801.csv')
+weightVector = loadWeight('WeightVector-Server0801.csv')
 # print(probOfType('http://dbpedia.org/ontology/Country', 'http://dbpedia.org/resource/Australia'))
 # print(topKTypes('http://dbpedia.org/resource/Australia',10))
 # print(probOfType('http://dbpedia.org/ontology/Genre', 'http://dbpedia.org/resource/Variety_Show'))
