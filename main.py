@@ -38,6 +38,10 @@ def loadTestCases(filename):
 	return testcases
 
 def processATestCase(rve, typeThreshold, method):
+	if typeThreshold is None:
+		print('Change the object', rve['o'], rve['r'])
+		return getAnswerSortedList(rve['s'], rve['p'], rve['o'], method)
+
 	prob = SDType.probOfType(rve['r'], rve['o'])
 	if prob > typeThreshold:
 		print('Retain the old object', rve['o'], rve['r'], prob)
@@ -668,7 +672,7 @@ def inside(kwList, abstract):
 # ------------------------------------------------------------------------------------------
 testFilename = 'RVEsSampledServer300-20171229033026.csv'
 testFilename = 'RVEsSampledServer300-20180109062843.csv'
-method = 'keyword'
+method = 'combinedScore'
 
 testcases = loadTestCases(testFilename)
 testRange = range(len(testcases))
@@ -680,7 +684,7 @@ w = unicodecsv.writer(f, encoding='utf-8')
 for k in testRange:
 	rve = testcases[k]
 	print('Testcase', k, rve['s'], rve['p'], rve['o'], rve['r'])
-	sortedCandidates = processATestCase(rve, typeThreshold = 0.4, method = method)
+	sortedCandidates = processATestCase(rve, typeThreshold = None, method = method)
 	if sortedCandidates == []:
 		w.writerow([k, rve['s'], rve['p'], rve['o'], rve['r'], '1', '-'])
 	elif sortedCandidates is not None:
