@@ -672,7 +672,7 @@ def inside(kwList, abstract):
 # ------------------------------------------------------------------------------------------
 testFilename = 'RVEsSampledServer300-20171229033026.csv'
 testFilename = 'RVEsSampledServer300-20180109062843.csv'
-method = 'combinedScore'
+method = 'graph'
 
 testcases = loadTestCases(testFilename)
 testRange = range(len(testcases))
